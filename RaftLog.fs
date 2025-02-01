@@ -47,7 +47,7 @@ module RaftLog
         else
           resolveConflicts log xs n
     
-
+  // todo: think about a initialize with a initial entries
   let initialize () : RaftLog =
   
     let appendEntries prevIndex prevTerm entries : S<Log, bool> =

@@ -346,9 +346,13 @@ module RaftLogic
           | term when term < state.CurrentTerm -> [],state
           | _ ->
 
+            let state = { state with
+                            VotesReceived =
+                              state.VotesReceived
+                              |> Map.add source msg.VoteGranted }
+            
             let totalVotes =
               state.VotesReceived
-              |> Map.add source msg.VoteGranted
               |> Map.filter (fun _ voteGranted -> voteGranted)
               |> Map.count
 
@@ -368,6 +372,7 @@ module RaftLogic
 
   let private handleCallElection : S<RaftState, Message list> =
     state {
+      printfn "HandleCallElection"
       let! state = getS
       let newState = becomeCandidate state
       do! putS newState
@@ -432,16 +437,68 @@ module RaftLogic
 // -- Tests
   open Expecto
 
+  let deliverAllMessages messages cluster =
+    let rec processMessages items cluster =
+      match items with
+      | [] -> cluster
+      | msg :: rest ->
+          printfn "msg: %A" msg
+          // Receiving raft node
+          let raft,state = cluster |> Seq.item msg.Dest
+          // Handle the message and get outgoing messages
+          let (outgoing,newState) = runS (raft.HandleMessage msg) state
+
+          // Update the state of the cluster
+          let updatedCluster =
+            cluster
+            |> Seq.mapi (fun i (r,s) ->
+                if i = msg.Dest then (r, newState) else (r,s))
+
+          processMessages (rest @ outgoing) updatedCluster
+    processMessages messages cluster
+
   let fakeCluster numNodes =
+    // seq of ratflogic,raftstate
     seq { for n in 0 .. numNodes ->
             let state = initialRaftState n numNodes
             let raftLog = RaftLog.initialize ()
             let raft = initialize' raftLog
-            raft
+            raft,state
         }
 
   let entry term command = {
     Term=term;Command=command }
+
+  let callElection source dest =
+    { Source = source
+      Dest = dest
+      Term = 0
+      Payload = CallElection
+      Timestamp = 0 }
+
+  let clusterWithTerm term cluster =
+    cluster
+    |> Seq.map (fun (raft,(state:RaftState)) ->
+        (raft, { state with CurrentTerm=3 }))
+
+  let applyFigure6Log (entries: Log) cluster =
+    let take n : Log =
+      entries |> List.take n
+
+    cluster
+    |> Seq.mapi (fun i (raft,(state:RaftState)) ->
+        match i with
+        | 0 -> (raft, {state with Log = state.Log |> List.append entries})
+        | 1 -> (raft, {state with Log = state.Log |> List.append (take 5)})
+        | 2 -> (raft, {state with Log = state.Log |> List.append entries})
+        | 3 -> (raft, {state with Log = state.Log |> List.append (take 2)})
+        | 4 -> (raft, {state with Log = state.Log |> List.append (take 7)})
+        | _ -> (raft, state))
+
+  let leader cluster =
+    cluster
+    |> Seq.mapi (fun i (raft,(state:RaftState)) ->
+        if i = 0 then raft,(becomeLeader state) else raft,state)
 
   let createFigure6 () =
     let entries = [ (entry 1 "x<3"); (entry 1 "y<1"); (entry 1 "y<9");
@@ -449,6 +506,9 @@ module RaftLogic
                     (entry 3 "x<5"); (entry 3 "x<4") ]
 
     fakeCluster 5
+    |> clusterWithTerm 3
+    |> applyFigure6Log entries
+    |> leader
 
   let tests =
     testList "Test RaftLogic" [
@@ -531,6 +591,41 @@ module RaftLogic
         // Handle the AppendEntriesResponse
         let outgoing,leaderState = runS (leader.HandleMessage response.[0]) leaderState
         Expect.equal outgoing [] "Outgoing is empty"
+      }
+      test "Test figure 6 election" {
+        let getState n cluster =
+          cluster
+          |> Seq.item n
+          |> snd
+        
+        let cluster =
+          createFigure6 ()
+          |> deliverAllMessages [ (callElection 0 0) ]
+        
+        Expect.equal (getState 0 cluster).Role Leader "Node 0 wins"
+        Expect.equal (getState 0 cluster).VotesReceived (Map [ (1,true);(2,true);(3,true);(4,true) ]) "Vote granted received"
+
+        let cluster =
+          createFigure6 ()
+          |> deliverAllMessages [ (callElection 1 1) ]
+
+        Expect.equal (getState 1 cluster).Role Candidate "Node 1 loses"
+        Expect.equal (getState 1 cluster).VotesReceived (Map [ (0,false);(2,false);(3,true);(4,false) ]) "Only vote from node 3"
+
+        let cluster =
+          createFigure6 ()
+          |> deliverAllMessages [ (callElection 3 3) ]
+
+        Expect.equal (getState 3 cluster).Role Candidate "Node 3 loses"
+        Expect.equal (getState 3 cluster).VotesReceived (Map [ (0,false);(1,false);(2,false);(4,false) ]) "No votes received"
+
+        let cluster =
+          createFigure6 ()
+          |> deliverAllMessages [ (callElection 4 4) ]
+
+        Expect.equal (getState 4 cluster).Role Leader "Node 4 wins"
+        Expect.equal (getState 4 cluster).VotesReceived (Map [ (0,false);(1,true);(2,false);(3,true) ]) "Enough votes"
+
       }
     ]
 
