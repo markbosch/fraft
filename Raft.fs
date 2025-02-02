@@ -27,12 +27,11 @@ module Raft
   let initialize (nodeNum: int) (callback:Callback) : Raft =
     let lockObj = obj()
     let mutable lastKnownQuorum = 0L
+    let mutable heardFromLeader = false
     
     let raftNet = createRaftNet nodeNum
     let raftLog = RaftLog.initialize ()
     let mutable raftState = RaftLogic.initialRaftState nodeNum (servers |> Map.count)
-    if nodeNum = 0 then
-      raftState <- becomeLeader raftState
 
     let mutable lastExchangedWithPeers =
       raftState.Peers
@@ -52,7 +51,7 @@ module Raft
       raftState.Role = Leader && requestTime < lastKnownQuorum
 
     let sendMessage msg =
-      printfn "Sending %A: " msg // todo, think about a logger
+      //printfn "Sending %A: " msg // todo, think about a logger
       msg
       |> encode
       |> raftNet.Send msg.Dest
@@ -73,7 +72,14 @@ module Raft
     let tagWithTimestamp timestamp imsg omsg =
       match omsg.Payload with
       | AE  _ -> { omsg with Timestamp = timestamp }
-      | AER _ -> { omsg with Timestamp = imsg.Timestamp }
+      | AER _ when omsg.Term = imsg.Term ->
+        heardFromLeader <- true
+        { omsg with Timestamp = imsg.Timestamp }
+      | AER _ ->
+        { omsg with Timestamp = imsg.Timestamp }
+      | RVR rvr when rvr.VoteGranted ->
+        heardFromLeader <- true
+        omsg
       | _     -> omsg
 
     let handleMessage msg =
@@ -111,7 +117,7 @@ module Raft
       while true do
         try
           let msg = decode<RaftLogic.Message> (raftNet.Receive ())
-          printfn "Received: %A" msg
+          //printfn "Received: %A" msg
 
           let outgoing = handleMessage msg
           
@@ -139,11 +145,26 @@ module Raft
         
         sendMessage msg
 
+    let electionTimer () =
+      let rnd = new Random()
+      while true do
+        heardFromLeader <- false
+        let sleep = ELECTION_TIMEOUT + rnd.Next(0, ELECTION_RANDOM + 1)
+        Thread.Sleep(TimeSpan.FromSeconds(sleep))
+        if raftState.Role <> Leader && heardFromLeader = false then
+          let callElection =
+            { Source = nodeNum
+              Dest = nodeNum
+              Term = raftState.CurrentTerm
+              Payload = CallElection
+              Timestamp = 0 }
+          sendMessage callElection
+
     let start () =
       raftNet.Start ()
-      (new Thread(runServer)).Start()
-      (new Thread(heartbeatTimer)).Start()
-      
+      (new Thread(runServer)).Start ()
+      (new Thread(heartbeatTimer)).Start ()
+      (new Thread(electionTimer)).Start ()
     {
       IsLeader = isLeader
       Submit = submit

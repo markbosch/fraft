@@ -284,11 +284,9 @@ module RaftLogic
   let handleHeartbeat =
     state {
       let! state = getS
-      printfn "HandleHeartbeat state: %A" state
+      printfn "HandleHeartbeat state: %A" state.Role
       if state.Role = Leader then
-        let messages = updateFollowers state
-        printfn "HandleHeartbeat msg: %A" messages
-        return messages
+        return updateFollowers state
       elif state.Role = Candidate then
        return requestVotes state
       else

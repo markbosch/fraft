@@ -7,9 +7,9 @@ open RaftLog
 open RaftLogic
 open Raft
 
-runTests()
-runLogTests()
-runRaftLogicTests ()
+//runTests()
+//runLogTests()
+//runRaftLogicTests ()
 
 let getNode () =
     Environment.GetCommandLineArgs() 

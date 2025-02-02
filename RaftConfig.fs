@@ -13,5 +13,7 @@ module RaftConfig
     let getAddress dest =
       servers |> Map.find dest
 
-    let HEARTBEAT_TIMER = 10
+    let HEARTBEAT_TIMER = 1
     let MAX_ENTRIES = 1000
+    let ELECTION_TIMEOUT = 5   // In seconds
+    let ELECTION_RANDOM = 3    // In seconds
