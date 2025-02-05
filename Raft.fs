@@ -51,7 +51,6 @@ module Raft
       raftState.Role = Leader && requestTime < lastKnownQuorum
 
     let sendMessage msg =
-      //printfn "Sending %A: " msg // todo, think about a logger
       msg
       |> encode
       |> raftNet.Send msg.Dest
@@ -69,14 +68,21 @@ module Raft
         sendMessage submitCommand
         true
 
-    let tagWithTimestamp timestamp imsg omsg =
+    let tagWithTimestamp timestamp omsg =
+      { omsg with Timestamp = timestamp }
+
+    let processOutgoingMsg imsg omsg =
       match omsg.Payload with
-      | AE  _ -> { omsg with Timestamp = timestamp }
+      | AE  _ ->
+        tagWithTimestamp (Stopwatch.GetTimestamp ()) omsg
+
       | AER _ when omsg.Term = imsg.Term ->
         heardFromLeader <- true
-        { omsg with Timestamp = imsg.Timestamp }
+        tagWithTimestamp imsg.Timestamp omsg
+
       | AER _ ->
-        { omsg with Timestamp = imsg.Timestamp }
+        tagWithTimestamp imsg.Timestamp omsg
+
       | RVR rvr when rvr.VoteGranted ->
         heardFromLeader <- true
         omsg
@@ -88,7 +94,7 @@ module Raft
 
       let result =
         outgoing
-        |> List.map (tagWithTimestamp (Stopwatch.GetTimestamp ()) msg)
+        |> List.map (processOutgoingMsg msg)
 
       match msg.Payload with
       | AER aer when raftState.Role = Leader ->

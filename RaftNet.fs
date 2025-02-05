@@ -45,9 +45,12 @@ module RaftNet
       ProtocolType.Tcp)
       
     let receiver sock =
-      while true do
-        let msg = recvMessage sock
-        state.Inbox.Add msg
+      try
+        while true do
+          let msg = recvMessage sock
+          state.Inbox.Add msg
+      with
+      | (ex: exn) -> sock.Close ()
         
     let acceptor () =
       socket.Bind (getAddress nodeNum)
@@ -57,6 +60,31 @@ module RaftNet
         let thread = new Thread(
           ThreadStart(fun () -> receiver client))
         thread.Start()  
+
+    let senderAsync (dest: Node) =
+      async {
+        use socket = new Socket(
+          AddressFamily.InterNetwork,
+          SocketType.Stream,
+          ProtocolType.Tcp)
+
+        let outbox = state.Outboxes
+                  |> Map.find dest
+      
+        while true do  
+          let msg = outbox.Get()
+          try
+            if not socket.Connected then
+              socket.ConnectAsync (getAddress dest)
+              |> Async.AwaitTask
+              |> ignore
+
+            return sendMessage socket (b msg)
+          with 
+          | (ex: exn) -> eprintfn "%s" ex.Message }
+
+    let sender' (dest: Node) =
+      senderAsync dest |> Async.RunSynchronously
 
     let sender (dest : Node) =
       use socket = new Socket(
@@ -71,10 +99,10 @@ module RaftNet
         try
           if not socket.Connected then
             socket.Connect (getAddress dest)
-          
+
           sendMessage socket (b msg)
         with
-        | (ex: exn) -> printfn "%s" ex.Message
+        | (ex: exn) -> eprintfn "%s" ex.Message
 
     // -- External API 
     let send (dest: Node) (msg: string) : unit =
@@ -92,7 +120,7 @@ module RaftNet
       thread.Start()
       state.Outboxes
       |> Map.iter (fun dest _ ->
-          let thread = new Thread(ThreadStart(fun () -> sender dest))
+          let thread = new Thread(ThreadStart(fun () -> sender' dest))
           thread.Start()) 
 
     {

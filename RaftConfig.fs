@@ -1,6 +1,14 @@
 module RaftConfig
 
     open System.Net
+
+    let kvservers = Map [
+      (0, IPEndPoint(0, 12345));
+      (1, IPEndPoint(0, 12346));
+      (2, IPEndPoint(0, 12347));
+      //(3, IPEndPoint(0, 12348));
+      //(4, IPEndPoint(0, 12349));
+    ]
     
     let servers = Map [
       (0, IPEndPoint(0, 15000));

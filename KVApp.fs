@@ -1,6 +1,6 @@
 module KVApp
-  // todo: revisit the state monad
-  //       https://fsharpforfunandprofit.com/posts/monadster-3/
+  // State module is redundant.
+  // See also State.fs
   module State =
     type State<'S, 'A> =
       State of ('S -> 'A * 'S)

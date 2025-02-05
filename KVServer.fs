@@ -4,14 +4,15 @@ module KVServer
   open System.Collections.Concurrent
   open System.Net
   open System.Net.Sockets
+  open System.Threading.Tasks
   open FSharpx.Control
 
   open Raft
   open Message
   open KVApp
-  open System.Threading.Tasks
 
-  let private servers = Map [
+
+  let servers = Map [
       (0, IPEndPoint(0, 12345));
       (1, IPEndPoint(0, 12346));
       (2, IPEndPoint(0, 12347));
@@ -42,7 +43,9 @@ module KVServer
           if kvcmd.StartsWith "get" then
             if raft.IsLeader () then
               let result = handleMessage kvcmd
-              sendMessage sock (b result) 
+              sendMessage sock (b result)
+            else
+              sendMessage sock (b "not leader")
           else
       
             pendingTransactions[transactionId] <- new TaskCompletionSource<string>();
@@ -54,7 +57,7 @@ module KVServer
  
               sendMessage sock (b response)
             else
-              printfn "Unable to commit to raft"
+              sendMessage sock (b "not leader")
             
             pendingTransactions.TryRemove(transactionId) |> ignore
             
