@@ -3,16 +3,16 @@
 #r "nuget: fspickler"
 #r "nuget: fspickler.json"
 
-#load "State.fs"
-#load "Message.fs"
-#load "RaftConfig.fs"
-#load "RaftLog.fs"
-#load "RaftLogic.fs"
-#load "RaftNet.fs"
-#load "Raft.fs"
+#load "Raft/State.fs"
+#load "Raft/Message.fs"
+#load "Raft/RaftConfig.fs"
+#load "Raft/RaftLog.fs"
+#load "Raft/RaftLogic.fs"
+#load "Raft/RaftNet.fs"
+#load "Raft/Raft.fs"
 
-open RaftNet
-open RaftConsole
-open Raft
+open Raft.RaftNet
+open Raft.RaftNet.RaftConsole
+open Raft.Api
 
 

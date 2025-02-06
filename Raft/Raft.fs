@@ -1,11 +1,13 @@
-module Raft
+namespace Raft
+
+module Api =
 
   open System
   open System.Diagnostics
   open System.Threading
 
   open State
-  open RaftConfig
+  open Config
   open RaftNet
   open RaftLog
   open RaftLogic

@@ -1,4 +1,6 @@
-module RaftLog
+namespace Raft
+
+module RaftLog =
 
   open State
 

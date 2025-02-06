@@ -6,13 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="State.fs" />
-    <Compile Include="RaftConfig.fs" />
-    <Compile Include="Message.fs" />
-    <Compile Include="RaftLog.fs" />
-    <Compile Include="RaftLogic.fs" />
-    <Compile Include="RaftNet.fs" />
-    <Compile Include="Raft.fs" />
+    <Compile Include="Raft/State.fs" />
+    <Compile Include="Raft/RaftConfig.fs" />
+    <Compile Include="Raft/Message.fs" />
+    <Compile Include="Raft/RaftLog.fs" />
+    <Compile Include="Raft/RaftLogic.fs" />
+    <Compile Include="Raft/RaftNet.fs" />
+    <Compile Include="Raft/Raft.fs" />
     <Compile Include="KVApp2.fs" />
     <Compile Include="KVServer.fs" />
     <Compile Include="Program.fs" />

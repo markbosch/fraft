@@ -1,11 +1,13 @@
-module RaftNet
+namespace Raft
+
+module RaftNet =
 
   open System.Net.Sockets
   open System.Threading 
   open FSharpx.Control
   open MBrace.FsPickler.Json
 
-  open RaftConfig
+  open Config
   open Message
   
   type bytes = byte array
@@ -36,7 +38,7 @@ module RaftNet
     let state = {
       NodeNum = nodeNum
       Inbox = new BlockingQueueAgent<string>(1)
-      Outboxes = RaftConfig.servers 
+      Outboxes = servers 
         |> Map.map (fun _ _ -> new BlockingQueueAgent<string>(1))
     }
     let socket = new Socket(

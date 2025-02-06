@@ -7,21 +7,13 @@ module KVServer
   open System.Threading.Tasks
   open FSharpx.Control
 
-  open Raft
-  open Message
+  open Raft.Api
+  open Raft.Config
+  open Raft.Message
   open KVApp
 
-
-  let servers = Map [
-      (0, IPEndPoint(0, 12345));
-      (1, IPEndPoint(0, 12346));
-      (2, IPEndPoint(0, 12347));
-      //(3, IPEndPoint(0, 12348));
-      //(4, IPEndPoint(0, 12349));
-    ]
-
   let private getAddress node =
-      servers |> Map.find node
+      kvservers |> Map.find node
   
   let splitAtFirstSpace (input: string) =
     let parts = input.Split([|' '|]) |> Array.toList
@@ -83,7 +75,7 @@ module KVServer
     
 
   let run nodeNum =
-    let raft = Raft.initialize nodeNum callback
+    let raft = Raft.Api.initialize nodeNum callback
     raft.Start ()
 
     let address = getAddress nodeNum

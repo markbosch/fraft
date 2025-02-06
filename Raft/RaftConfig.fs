@@ -1,4 +1,6 @@
-module RaftConfig
+namespace Raft
+
+module Config =
 
     open System.Net
 

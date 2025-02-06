@@ -1,13 +1,13 @@
-#load "Message.fs"
-#load "RaftConfig.fs"
+#load "Raft/Message.fs"
+#load "Raft/RaftConfig.fs"
 
 open System
 open System.Net
 open System.Net.Sockets
 open System.Text
 
-open Message
-open RaftConfig
+open Raft.Message
+open Raft.Config
 
 let stress n =
   let address = IPEndPoint(0, 12345)

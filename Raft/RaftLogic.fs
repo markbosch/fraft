@@ -1,7 +1,9 @@
-module RaftLogic
+namespace Raft
+
+module RaftLogic =
 
   open State
-  open RaftConfig
+  open Config
   open RaftLog
 
   type AppendEntries = {

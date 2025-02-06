@@ -1,4 +1,6 @@
-module Message
+namespace Raft
+
+module Message =
 
   open System.Net
   open System.Net.Sockets

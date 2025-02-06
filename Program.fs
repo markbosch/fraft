@@ -2,14 +2,6 @@
 open System
 open KVApp
 open KVServer
-open RaftNet.RaftConsole
-open RaftLog
-open RaftLogic
-open Raft
-
-//runTests()
-//runLogTests()
-//runRaftLogicTests ()
 
 let getNode () =
     Environment.GetCommandLineArgs() 
@@ -17,7 +9,6 @@ let getNode () =
 
 let node = getNode ()
 
-//console node 3
 run node
 
 
