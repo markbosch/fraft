@@ -136,7 +136,7 @@ module RaftNet =
 
     open State
     open RaftLog
-    open RaftLogic
+    open RaftController
 
     let heartbeat source dest raft =
       { Source = source
@@ -154,15 +154,15 @@ module RaftNet =
     let console (nodeNum: Node) clusterSize =
 
         let (n: int) = nodeNum
-        let mutable raftState = RaftLogic.initialRaftState n clusterSize
+        let mutable raftState = RaftController.initialRaftState n clusterSize
         let raftLog = RaftLog.initialize ()
-        let raft = RaftLogic.initialize raftLog.AppendEntries
+        let raft = RaftController.initialize raftLog.AppendEntries
         let raftNet = createRaftNet nodeNum
         raftNet.Start ()
 
         let receiver () =
           while true do 
-            let msg = decode<RaftLogic.Message> (raftNet.Receive ())
+            let msg = decode<RaftController.Message> (raftNet.Receive ())
             let messages, raftState = runS (raft.HandleMessage msg) raftState
             printfn "received: %A" msg
             printfn "outgoing: %A" messages

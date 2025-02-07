@@ -1,6 +1,6 @@
 namespace Raft
 
-module RaftLogic =
+module RaftController =
 
   open State
   open Config
@@ -67,7 +67,7 @@ module RaftLogic =
     VotesReceived: Map<int,bool>
   }
 
-  type RaftCore = {
+  type Controller = {
       HandleMessage: Message -> S<RaftState, Message list>
     }
 
@@ -379,7 +379,7 @@ module RaftLogic =
       return requestVotes newState 
     }
 
-  let public initialize appendEntries : RaftCore =
+  let public initialize appendEntries : Controller =
 
     let handleMessage (message: Message) : S<RaftState, Message list> =
       match message.Payload with
@@ -413,7 +413,7 @@ module RaftLogic =
       HandleMessage = handleMessage
     }
 
-  let public initialize' (raftlog:RaftLog) : RaftCore =
+  let public initialize' (raftlog:RaftLog) : Controller =
     initialize raftlog.AppendEntries
 
   let public initialRaftState nodeNum clusterSize =
@@ -511,7 +511,7 @@ module RaftLogic =
     |> leader
 
   let tests =
-    testList "Test RaftLogic" [
+    testList "Test RaftController" [
       test "Test follower update" {
         // leader
         let cmd = { Source = 0; Dest = 0; Term=1; Payload = CMD { Command = "set x 42" }; Timestamp =0; }
@@ -629,5 +629,5 @@ module RaftLogic =
       }
     ]
 
-  let runRaftLogicTests () =
+  let runRaftControllerTests () =
     runTestsWithCLIArgs [] [||] tests |> ignore

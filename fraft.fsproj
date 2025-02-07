@@ -10,9 +10,9 @@
     <Compile Include="Raft/RaftConfig.fs" />
     <Compile Include="Raft/Message.fs" />
     <Compile Include="Raft/RaftLog.fs" />
-    <Compile Include="Raft/RaftLogic.fs" />
+    <Compile Include="Raft/RaftController.fs" />
     <Compile Include="Raft/RaftNet.fs" />
-    <Compile Include="Raft/Raft.fs" />
+    <Compile Include="Raft/Api.fs" />
     <Compile Include="KVApp2.fs" />
     <Compile Include="KVServer.fs" />
     <Compile Include="Program.fs" />

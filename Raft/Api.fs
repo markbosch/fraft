@@ -10,7 +10,7 @@ module Api =
   open Config
   open RaftNet
   open RaftLog
-  open RaftLogic
+  open RaftController
 
   type Command = string
 
@@ -33,14 +33,14 @@ module Api =
     
     let raftNet = createRaftNet nodeNum
     let raftLog = RaftLog.initialize ()
-    let mutable raftState = RaftLogic.initialRaftState nodeNum (servers |> Map.count)
+    let mutable raftState = RaftController.initialRaftState nodeNum (servers |> Map.count)
 
     let mutable lastExchangedWithPeers =
       raftState.Peers
       |> Seq.map (fun key -> key,0L)
       |> Map.ofSeq
     
-    let raftCore = RaftLogic.initialize raftLog.AppendEntries
+    let controller = RaftController.initialize raftLog.AppendEntries
 
     let isLeader () =
       let requestTime = Stopwatch.GetTimestamp ()
@@ -91,7 +91,7 @@ module Api =
       | _     -> omsg
 
     let handleMessage msg =
-      let outgoing, state = runS (raftCore.HandleMessage msg) raftState
+      let outgoing, state = runS (controller.HandleMessage msg) raftState
       raftState <- state
 
       let result =
@@ -124,9 +124,7 @@ module Api =
       let mutable lastApplied = 0
       while true do
         try
-          let msg = decode<RaftLogic.Message> (raftNet.Receive ())
-          //printfn "Received: %A" msg
-
+          let msg = decode<RaftController.Message> (raftNet.Receive ())
           let outgoing = handleMessage msg
           
           // -- Tell the application

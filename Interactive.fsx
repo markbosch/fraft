@@ -7,9 +7,9 @@
 #load "Raft/Message.fs"
 #load "Raft/RaftConfig.fs"
 #load "Raft/RaftLog.fs"
-#load "Raft/RaftLogic.fs"
+#load "Raft/RaftController.fs"
 #load "Raft/RaftNet.fs"
-#load "Raft/Raft.fs"
+#load "Raft/Api.fs"
 
 open Raft.RaftNet
 open Raft.RaftNet.RaftConsole
